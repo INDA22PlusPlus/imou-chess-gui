@@ -1,27 +1,27 @@
 use piston::{GenericEvent, MouseButton, Button};
 use crate::ChessView;
-use crate::ChessPiece;
+use chess::piece::*;
 
-
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ChessViewController
 {
-    pub chessview: ChessView,
     
-    pub from: Option<u8>,
-    pub to: Option<u8>,
+    pub selected: u8,
 
     cursor_pos: [f64;2]
 }
 
 impl ChessViewController
 {
-    pub fn new(chessview: ChessView) -> ChessViewController
+    // Dummy class, holding the selected block's coordinates and the cursor's pos
+    pub fn new() -> ChessViewController
     {
-        ChessViewController{chessview: chessview, from: None, to: None,
+        // 255 = not selected
+        ChessViewController{selected: 255,
                             cursor_pos: [0.0;2]}
     }
 
+    // Controlls the events, s.a mouse clicks and so on..
     pub fn event<E: GenericEvent>(&mut self, chessview: &mut ChessView, e: &E)
     {
         let pos: [f64; 2] = chessview.settings._pos;
@@ -32,6 +32,7 @@ impl ChessViewController
             self.cursor_pos = cursor_pos;
         }
 
+        // If a mouse click happened, try to register it a selection or a move
         if let Some(Button::Mouse(MouseButton::Left)) = e.press_args()
         {
 
@@ -46,17 +47,36 @@ impl ChessViewController
             let block_x: u8 = (x / size * 8.0) as u8;
             let block_y: u8 = (y / size * 8.0) as u8;
 
-            match self.from
+            let u8_x_to_str: [&str; 8] = ["a","b","c","d","e","f","g","h"];
+            let u8_y_to_str: [&str; 8] = ["1","2","3","4","5","6","7","8"];
+
+            let block_x_str: &str = u8_x_to_str[block_x as usize];
+            let block_y_str: &str = u8_y_to_str[7-block_y as usize];
+            let block_coords_str: String = format!("{}{}", block_x_str, block_y_str);
+
+            match chessview.board.get_selected()
             {
-                // Just doing some moves
-                Some(from) => {
-                    let from_el: ChessPiece = chessview.blocks[from as usize];
-                    if from_el == ChessPiece::Empty { self.from = None; return; }
-                    chessview.blocks[from as usize] = ChessPiece::Empty;
-                    chessview.blocks[(block_y * 8 + block_x) as usize] = from_el;                    
-                    self.from = None;
+                // If there's a piece selected make the move if possible
+                Some(_from) => {
+                    chessview.board.play_selected_piece_with_notation(
+                                        block_coords_str.as_str());
+                    
+                    // Not selected
+                    self.selected = 255;
                 },
-                None => self.from = Some(block_y * 8 + block_x)
+                None => {
+
+                    let item: Option<Piece> = chessview.board.get_piece_option_with_notation(
+                                                            block_coords_str.as_str());
+                    // If the target block selected is not empty, select it and register 
+                    // the coordinates
+                    if let Some(_item) = item
+                    {
+                        // Set the coordinate of the selected block
+                        self.selected = block_x+8*block_y;
+                        chessview.board.select_piece_notation(block_coords_str.as_str());
+                    }
+                }
             }
         }
     }

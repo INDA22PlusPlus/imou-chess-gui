@@ -3,12 +3,16 @@ extern crate glutin_window;
 use std::path::Path;
 use std::collections::HashMap;
 
+
 use piston::{WindowSettings, RenderEvent, EventLoop};
 use glutin_window::GlutinWindow;
 use opengl_graphics::{OpenGL, GlGraphics, Texture, TextureSettings};
 use piston::event_loop::{EventSettings, Events};
 
-pub use crate::chessview::{ChessPiece, ChessView, ChessViewSettings};
+use chess::colors::Colors;
+use chess::piece_types::PieceTypes;
+
+pub use crate::chessview::{ChessView, ChessViewSettings};
 pub use crate::chessview_controller::ChessViewController;
 
 mod chessview;
@@ -34,10 +38,11 @@ fn main() {
     // Main chess gui components for event handling
     let _chessview_settings: ChessViewSettings = ChessViewSettings::new();
     let mut _chessview: ChessView = ChessView::new(_chessview_settings);
-    let mut _chessview_controller: ChessViewController = ChessViewController::new(_chessview);
+    let mut _chessview_controller: ChessViewController = ChessViewController::new();
     
-    let mut _texture_storage: HashMap<ChessPiece, Texture> = HashMap::new();
-
+    // Initializing the textures from the png files and storing them as a reference
+    // inside a hash map based on the chess struct attributes (color and type)
+    let mut _texture_storage: HashMap<(PieceTypes, Colors), Texture> = HashMap::new();
     let w_king: Texture = Texture::from_path(Path::new("assets/img/w_king.png"),
     &TextureSettings::new()).unwrap();
     let w_queen: Texture = Texture::from_path(Path::new("assets/img/w_queen.png"),
@@ -64,30 +69,36 @@ fn main() {
     let b_pawn: Texture = Texture::from_path(Path::new("assets/img/b_pawn.png"),
     &TextureSettings::new()).unwrap();       
 
-    _texture_storage.insert(ChessPiece::WKing, w_king);
-    _texture_storage.insert(ChessPiece::WQueen, w_queen);
-    _texture_storage.insert(ChessPiece::WKnight, w_knight);
-    _texture_storage.insert(ChessPiece::WBishop, w_bishop);
-    _texture_storage.insert(ChessPiece::WRook, w_rook);
-    _texture_storage.insert(ChessPiece::WPawn, w_pawn);
+    _texture_storage.insert((PieceTypes::King, Colors::White), w_king);
+    _texture_storage.insert((PieceTypes::Queen, Colors::White), w_queen);
+    _texture_storage.insert((PieceTypes::Knight, Colors::White), w_knight);
+    _texture_storage.insert((PieceTypes::Bishop, Colors::White), w_bishop);
+    _texture_storage.insert((PieceTypes::Rook, Colors::White), w_rook);
+    _texture_storage.insert((PieceTypes::Pawn, Colors::White), w_pawn);
 
-    _texture_storage.insert(ChessPiece::BKing, b_king);
-    _texture_storage.insert(ChessPiece::BQueen, b_queen);
-    _texture_storage.insert(ChessPiece::BKnight, b_knight);
-    _texture_storage.insert(ChessPiece::BBishop, b_bishop);
-    _texture_storage.insert(ChessPiece::BRook, b_rook);
-    _texture_storage.insert(ChessPiece::BPawn, b_pawn);
+    _texture_storage.insert((PieceTypes::King, Colors::Black), b_king);
+    _texture_storage.insert((PieceTypes::Queen, Colors::Black), b_queen);
+    _texture_storage.insert((PieceTypes::Knight, Colors::Black), b_knight);
+    _texture_storage.insert((PieceTypes::Bishop, Colors::Black), b_bishop);
+    _texture_storage.insert((PieceTypes::Rook, Colors::Black), b_rook);
+    _texture_storage.insert((PieceTypes::Pawn, Colors::Black), b_pawn);
 
     // Main event loop
     while let Some(e) = events.next(&mut window)
     {
+        // The `ChessViewController` handles all the mouse clicks
+        // and all other GUI events that are needed for the game to work
         _chessview_controller.event(&mut _chessview, &e);
         if let Some(args) = e.render_args()
         {
             gl.draw(args.viewport(), |c, g| {
                 use graphics::{clear};
 
+                // Clear with white color for every frame
                 clear([1.0; 4], g);
+                
+                // The drawing on the GUI canvas is handled by the
+                // `ChessView` struct
                 _chessview.draw(&_texture_storage,
                     &_chessview_controller, &c, g);
             });
