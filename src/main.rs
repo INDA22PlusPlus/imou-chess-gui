@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use piston::{WindowSettings, RenderEvent, EventLoop};
 use glutin_window::GlutinWindow;
-use opengl_graphics::{OpenGL, GlGraphics, Texture, TextureSettings};
+use opengl_graphics::{OpenGL, GlGraphics, Texture, TextureSettings, GlyphCache};
 use piston::event_loop::{EventSettings, Events};
 
 use chess::colors::Colors;
@@ -23,7 +23,7 @@ const W_HEIGHT: u32 = 640;
 
 fn main() {
     let opengl = OpenGL::V3_2;
-    let settings: WindowSettings = WindowSettings::new("Sudoku", (W_WIDTH, W_HEIGHT))
+    let settings: WindowSettings = WindowSettings::new("Chess", (W_WIDTH, W_HEIGHT))
                                     .exit_on_esc(true)
                                     .graphics_api(opengl)
                                     .vsync(true);
@@ -83,6 +83,13 @@ fn main() {
     _texture_storage.insert((PieceTypes::Rook, Colors::Black), b_rook);
     _texture_storage.insert((PieceTypes::Pawn, Colors::Black), b_pawn);
 
+    // Load main font. Some random font copied from /usr/share/fonts
+    let mut main_glyph: GlyphCache = GlyphCache::new("assets/font/Lato-Bold.ttf", 
+                                                (), 
+                                                TextureSettings::new()
+                                            ).unwrap();
+
+
     // Main event loop
     while let Some(e) = events.next(&mut window)
     {
@@ -99,7 +106,7 @@ fn main() {
                 
                 // The drawing on the GUI canvas is handled by the
                 // `ChessView` struct
-                _chessview.draw(&_texture_storage,
+                _chessview.draw(&mut main_glyph, &_texture_storage,
                     &_chessview_controller, &c, g);
             });
         }
